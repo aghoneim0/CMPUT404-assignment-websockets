@@ -1,7 +1,7 @@
 CMPUT404-assignment-websockets
 ==============================
 
-onclick changes the Circle colors 
+onclick changes the Circle colors for index.html enhancement part 
 
 
 Prereqs
