@@ -75,7 +75,10 @@ myWorld = World()
 
 def set_listener( entity, data ):
     ''' do something with the update ! '''
-    
+
+def send_to_client(data):
+    for client in clients:
+        client.put( data )    
 
 myWorld.add_set_listener( set_listener )
         
@@ -87,21 +90,15 @@ def hello():
 def read_ws(ws,client):
     '''A greenlet function that reads from the websocket and updates the world'''
     # XXX: TODO IMPLEMENT ME
-    print 'read here'
-    
-  
     while True:
         m=ws.receive()
         if m is not None:
             message=json.loads(m)
-       
             for entity, data in message.iteritems():
-
-                    if ( myWorld.get(entity) != data): #Update if it's not equal
-                        myWorld.set(entity,data)
-                        dic=dict()
-                        dic[entity]=myWorld.get(entity)
-                        ws.send(json.dumps(dic))
+                myWorld.set(entity,data)
+                dic=dict()
+                dic[entity]=myWorld.get(entity)
+                send_to_client(json.dumps(dic))
         else:
             break
     
@@ -109,12 +106,16 @@ def read_ws(ws,client):
 
 @sockets.route('/subscribe')
 def subscribe_socket(ws):
+    
     client = Client()
     clients.append(client)
     g = gevent.spawn( read_ws, ws,client)
-    
-    try:    # block here
-        client.get()
+    ws.send(myWorld.world())
+    try:
+        # block here
+        while True:
+            msg=client.get()
+            ws.send(msg)
     except Exception as e:# WebSocketError as e:
         print "WS Error %s" % e
     finally:
@@ -151,7 +152,7 @@ def world():
     '''you should probably return the world here'''
     print 'here'
     print myWorld.world()
-    return json.dumps(myWorld.world());
+    return json.dumps(myWorld.world())
 
 @app.route("/entity/<entity>")    
 def get_entity(entity):
