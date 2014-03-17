@@ -127,8 +127,9 @@ function getPosition(e) {
 function addEntity(entity, data) {
     world[entity] = data;
     drawNextFrame(); // (but should we?)
-    socket.send( JSON.stringify(world));
-    //XXX: Send a XHTML Request that updates the entity you just modified!*/
+    var socket_data={};
+    socket_data[entity] = data;
+    socket.send( JSON.stringify(socket_data));
 
 }
 var counter = 0;
@@ -306,6 +307,7 @@ function wsSetup() {
     var url = "ws://"+host+"/subscribe";   
     socket = new WebSocket(url);
     socket.onopen = function() {
+
         //XXX: TODO What are you going to do here?
     };
     socket.onerror = function(msg) {
@@ -313,15 +315,32 @@ function wsSetup() {
     };
     socket.onmessage = function(msg) {  
         try {
-            debug("WebSocket Recv:" + msg.data);
+            
+            ///console.log(msg.data);
+            if (msg.data.type != '')
+            {
+
+            if (msg.data.length >1000)
+            {
+                debug("WebSocket Recv: The World" );
+                
+            }else
+            {
+                debug("WebSocket Recv:" + msg.data);
+            }
+            ///clearconsole.log(msg.data.type)
             var world2 = JSON.parse(msg.data);
             for (var key in world2)
-                if (world[key] != world2[key]) //Only draw if they are different
-                {
+               {
                     world[key]=world2[key];
                     drawNextFrame();
                     drawFrame();
                 }
+            }else
+            {
+                //console.log(msg.data)
+                debug("WebSocket First Time load");
+            }
             //XXX: TODO What are you going to do here?            
         } catch (e) {
             alert("socket on message: " + e);
